@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Surface & Contour Plotter</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            min-height: 700px;
+        }
+        
+        .data-section {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        .controls-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .data-input {
+            margin-bottom: 20px;
+        }
+        
+        .spreadsheet-container {
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 400px;
+            max-width: 100%;
+            background: white;
+            position: relative;
+        }
+        
+        .spreadsheet {
+            border-collapse: collapse;
+            font-size: 12px;
+            width: auto;
+            min-width: 600px;
+        }
+        
+        .spreadsheet td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            text-align: center;
+            min-width: 60px;
+            position: relative;
+        }
+        
+        .spreadsheet td input {
+            border: none;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            padding: 2px;
+            background: transparent;
+        }
+        
+        .spreadsheet td:first-child {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .spreadsheet tr:first-child td {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .spreadsheet tr:first-child td:first-child {
+            background-color: #dee2e6;
+        }
+        
+        .plot-container {
+            height: 500px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .control-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .control-item label {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 3px;
+            font-weight: 500;
+        }
+        
+        .control-item input, .control-item select {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-row input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .checkbox-row label {
+            margin: 0;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 8px;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 3px;
+        }
+        
+        .success {
+            color: #155724;
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 8px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 3px;
+        }
+        
+        .instructions {
+            background-color: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #004085;
+        }
+        
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>3D Surface & Contour Plotter</h1>
+            <p>Interactive plotting tool for scientific data visualization</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ul>
+                <li><strong>Data Entry:</strong> Enter X-axis values in the first row, Y-axis values in the first column</li>
+                <li><strong>Copy/Paste:</strong> You can paste data directly from Excel or Google Sheets</li>
+                <li><strong>Auto-Trim:</strong> Empty rows and columns are automatically ignored when plotting</li>
+                <li><strong>Required:</strong> All data cells must contain numeric values (no empty cells in data region)</li>
+                <li><strong>Plot Types:</strong> Choose between 3D surface plots and 2D contour plots</li>
+                <li><strong>Controls:</strong> Adjust axis ranges, scaling, colors, and viewing angles using the controls panel</li>
+            </ul>
+        </div>
+        
+        <div class="main-content">
+            <div class="data-section">
+                <div class="data-input">
+                    <h2>Data Input</h2>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="initializeGrid(5, 5)">5×5 Grid</button>
+                        <button class="btn btn-secondary" onclick="initializeGrid(10, 10)">10×10 Grid</button>
+                        <button class="btn btn-secondary" onclick="initializeGrid(25, 25)">25×25 Grid</button>
+                        <button class="btn btn-secondary" onclick="initializeGrid(50, 50)">50×50 Grid</button>
+                        <button class="btn btn-secondary" onclick="initializeGrid(100, 100)">100×100 Grid</button>
+                        <button class="btn btn-secondary" onclick="clearGrid()">Clear All</button>
+                        <button class="btn btn-secondary" onclick="loadSampleData()">Load Sample</button>
+                    </div>
+                    <div class="spreadsheet-container">
+                        <table class="spreadsheet" id="dataGrid">
+                        </table>
+                    </div>
+                    <div id="dataStatus"></div>
+                </div>
+                
+                <div class="plot-container" id="plotDiv"></div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="control-group">
+                    <h3>Plot Settings</h3>
+                    <div class="checkbox-row">
+                        <input type="radio" id="surfacePlot" name="plotType" value="surface" checked>
+                        <label for="surfacePlot">3D Surface Plot</label>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="radio" id="contourPlot" name="plotType" value="contour">
+                        <label for="contourPlot">2D Contour Plot</label>
+                    </div>
+                    <div class="control-item" id="contourSettings" style="display: none;">
+                        <label for="numContours">Number of Contours:</label>
+                        <input type="number" id="numContours" value="10" min="5" max="50">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Axis Labels</h3>
+                    <div class="control-item">
+                        <label for="xLabel">X-Axis Label:</label>
+                        <input type="text" id="xLabel" placeholder="e.g., Temperature (°C)">
+                    </div>
+                    <div class="control-item">
+                        <label for="yLabel">Y-Axis Label:</label>
+                        <input type="text" id="yLabel" placeholder="e.g., Pressure (bar)">
+                    </div>
+                    <div class="control-item">
+                        <label for="zLabel">Z-Axis Label:</label>
+                        <input type="text" id="zLabel" placeholder="e.g., Concentration (mol/L)">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Axis Ranges</h3>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="autoRanges" checked onchange="toggleAutoRanges()">
+                        <label for="autoRanges">Auto-detect ranges</label>
+                    </div>
+                    <div id="manualRanges" style="display: none;">
+                        <div class="control-row">
+                            <div class="control-item">
+                                <label for="xMin">X Min:</label>
+                                <input type="number" id="xMin" step="any">
+                            </div>
+                            <div class="control-item">
+                                <label for="xMax">X Max:</label>
+                                <input type="number" id="xMax" step="any">
+                            </div>
+                        </div>
+                        <div class="control-row">
+                            <div class="control-item">
+                                <label for="yMin">Y Min:</label>
+                                <input type="number" id="yMin" step="any">
+                            </div>
+                            <div class="control-item">
+                                <label for="yMax">Y Max:</label>
+                                <input type="number" id="yMax" step="any">
+                            </div>
+                        </div>
+                        <div class="control-row">
+                            <div class="control-item">
+                                <label for="zMin">Z Min:</label>
+                                <input type="number" id="zMin" step="any">
+                            </div>
+                            <div class="control-item">
+                                <label for="zMax">Z Max:</label>
+                                <input type="number" id="zMax" step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Log Scaling</h3>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="xLog">
+                        <label for="xLog">X-Axis Log Scale</label>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="yLog">
+                        <label for="yLog">Y-Axis Log Scale</label>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="zLog">
+                        <label for="zLog">Z-Axis Log Scale</label>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Color Settings</h3>
+                    <div class="control-item">
+                        <label for="colorScale">Color Scale:</label>
+                        <select id="colorScale">
+                            <option value="Hot" selected>Hot</option>
+                            <option value="Viridis">Viridis</option>
+                            <option value="Plasma">Plasma</option>
+                            <option value="Jet">Jet</option>
+                            <option value="Rainbow">Rainbow</option>
+                            <option value="RdYlBu">Red-Yellow-Blue</option>
+                            <option value="Blues">Blues</option>
+                            <option value="Greens">Greens</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="autoColor" checked onchange="toggleAutoColor()">
+                        <label for="autoColor">Auto-detect color range</label>
+                    </div>
+                    <div id="manualColor" style="display: none;">
+                        <div class="control-row">
+                            <div class="control-item">
+                                <label for="colorMin">Color Min:</label>
+                                <input type="number" id="colorMin" step="any">
+                            </div>
+                            <div class="control-item">
+                                <label for="colorMax">Color Max:</label>
+                                <input type="number" id="colorMax" step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>View Settings</h3>
+                    <div class="control-row">
+                        <div class="control-item">
+                            <label for="cameraX">Camera X:</label>
+                            <input type="number" id="cameraX" value="1.25" step="0.1">
+                        </div>
+                        <div class="control-item">
+                            <label for="cameraY">Camera Y:</label>
+                            <input type="number" id="cameraY" value="1.25" step="0.1">
+                        </div>
+                    </div>
+                    <div class="control-item">
+                        <label for="cameraZ">Camera Z:</label>
+                        <input type="number" id="cameraZ" value="1.25" step="0.1">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="setView('default')">Default</button>
+                        <button class="btn btn-secondary" onclick="setView('top')">Top View</button>
+                        <button class="btn btn-secondary" onclick="setView('side')">Side View</button>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="updatePlot()">Update Plot</button>
+                    <button class="btn btn-secondary" onclick="exportPlot()">Export PNG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+        let currentGridSize = {rows: 25, cols: 25};
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeGrid(25, 25);
+            loadSampleData();
+            setupEventListeners();
+            updatePlot();
+        });
+
+        function setupEventListeners() {
+            // Plot type radio buttons
+            document.querySelectorAll('input[name="plotType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.getElementById('contourSettings').style.display = 
+                        this.value === 'contour' ? 'block' : 'none';
+                });
+            });
+        }
+
+        function initializeGrid(rows, cols) {
+            currentGridSize = {rows: rows, cols: cols};
+            const grid = document.getElementById('dataGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i <= rows; i++) {
+                const row = grid.insertRow();
+                for (let j = 0; j <= cols; j++) {
+                    const cell = row.insertCell();
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.addEventListener('paste', handlePaste);
+                    input.addEventListener('input', validateInput);
+                    
+                    if (i === 0 && j === 0) {
+                        input.disabled = true;
+                        input.style.backgroundColor = '#f0f0f0';
+                    }
+                    
+                    cell.appendChild(input);
+                }
+            }
+        }
+
+        function clearGrid() {
+            const inputs = document.querySelectorAll('#dataGrid input');
+            inputs.forEach(input => {
+                if (!input.disabled) {
+                    input.value = '';
+                }
+            });
+        }
+
+        function loadSampleData() {
+            // Create sample data: z = sin(x) * cos(y)
+            // Use a reasonable sample size for demonstration
+            const sampleRows = 10;
+            const sampleCols = 10;
+            const grid = document.getElementById('dataGrid');
+            
+            // Clear existing data first
+            clearGrid();
+            
+            // Fill X values (first row)
+            for (let j = 1; j <= sampleCols; j++) {
+                const x = (j - 1) * 0.5;
+                grid.rows[0].cells[j].firstChild.value = x.toFixed(2);
+            }
+            
+            // Fill Y values (first column) and Z values
+            for (let i = 1; i <= sampleRows; i++) {
+                const y = (i - 1) * 0.5;
+                grid.rows[i].cells[0].firstChild.value = y.toFixed(2);
+                
+                for (let j = 1; j <= sampleCols; j++) {
+                    const x = (j - 1) * 0.5;
+                    const z = Math.sin(x) * Math.cos(y) + 2;
+                    grid.rows[i].cells[j].firstChild.value = z.toFixed(3);
+                }
+            }
+            
+            clearStatus();
+        }
+
+        function handlePaste(event) {
+            event.preventDefault();
+            const clipboardData = event.clipboardData.getData('text');
+            const rows = clipboardData.split('\n').filter(row => row.trim() !== '');
+            const startCell = event.target.parentElement;
+            const startRow = startCell.parentElement.rowIndex;
+            const startCol = startCell.cellIndex;
+            const grid = document.getElementById('dataGrid');
+            
+            rows.forEach((rowData, rowOffset) => {
+                const values = rowData.split('\t');
+                values.forEach((value, colOffset) => {
+                    const targetRow = startRow + rowOffset;
+                    const targetCol = startCol + colOffset;
+                    
+                    if (targetRow < grid.rows.length && targetCol < grid.rows[targetRow].cells.length) {
+                        const targetInput = grid.rows[targetRow].cells[targetCol].firstChild;
+                        if (!targetInput.disabled) {
+                            targetInput.value = value.trim();
+                        }
+                    }
+                });
+            });
+        }
+
+        function validateInput(event) {
+            const value = event.target.value;
+            if (value !== '' && (isNaN(value) || value === '')) {
+                event.target.style.backgroundColor = '#ffebee';
+            } else {
+                event.target.style.backgroundColor = '';
+            }
+        }
+
+        function extractData() {
+            const grid = document.getElementById('dataGrid');
+            const totalRows = grid.rows.length - 1;
+            const totalCols = grid.rows[0].cells.length - 1;
+            
+            // Find the last non-empty column by checking X-axis headers (row 0)
+            let lastCol = 0;
+            for (let j = 1; j <= totalCols; j++) {
+                const value = grid.rows[0].cells[j].firstChild.value.trim();
+                if (value !== '') {
+                    lastCol = j;
+                }
+            }
+            
+            // Find the last non-empty row by checking Y-axis headers (column 0)
+            let lastRow = 0;
+            for (let i = 1; i <= totalRows; i++) {
+                const value = grid.rows[i].cells[0].firstChild.value.trim();
+                if (value !== '') {
+                    lastRow = i;
+                }
+            }
+            
+            if (lastRow === 0 || lastCol === 0) {
+                throw new Error('No data found. Please enter X-axis values in the first row and Y-axis values in the first column.');
+            }
+            
+            // Extract X values (first row, columns 1 to lastCol)
+            const xValues = [];
+            for (let j = 1; j <= lastCol; j++) {
+                const value = grid.rows[0].cells[j].firstChild.value.trim();
+                if (value === '' || isNaN(value)) {
+                    throw new Error(`Missing or invalid X value at column ${j}`);
+                }
+                xValues.push(parseFloat(value));
+            }
+            
+            // Extract Y values (first column, rows 1 to lastRow)
+            const yValues = [];
+            for (let i = 1; i <= lastRow; i++) {
+                const value = grid.rows[i].cells[0].firstChild.value.trim();
+                if (value === '' || isNaN(value)) {
+                    throw new Error(`Missing or invalid Y value at row ${i}`);
+                }
+                yValues.push(parseFloat(value));
+            }
+            
+            // Extract Z values (data matrix from row 1 to lastRow, column 1 to lastCol)
+            const zValues = [];
+            for (let i = 1; i <= lastRow; i++) {
+                const row = [];
+                for (let j = 1; j <= lastCol; j++) {
+                    const value = grid.rows[i].cells[j].firstChild.value.trim();
+                    if (value === '' || isNaN(value)) {
+                        throw new Error(`Missing or invalid Z value at row ${i}, column ${j}`);
+                    }
+                    row.push(parseFloat(value));
+                }
+                zValues.push(row);
+            }
+            
+            return {x: xValues, y: yValues, z: zValues, rows: lastRow, cols: lastCol};
+        }
+
+        function toggleAutoRanges() {
+            const autoRanges = document.getElementById('autoRanges').checked;
+            document.getElementById('manualRanges').style.display = autoRanges ? 'none' : 'block';
+        }
+
+        function toggleAutoColor() {
+            const autoColor = document.getElementById('autoColor').checked;
+            document.getElementById('manualColor').style.display = autoColor ? 'none' : 'block';
+        }
+
+        function setView(viewType) {
+            switch(viewType) {
+                case 'default':
+                    document.getElementById('cameraX').value = 1.25;
+                    document.getElementById('cameraY').value = 1.25;
+                    document.getElementById('cameraZ').value = 1.25;
+                    break;
+                case 'top':
+                    document.getElementById('cameraX').value = 0;
+                    document.getElementById('cameraY').value = 0;
+                    document.getElementById('cameraZ').value = 2.5;
+                    break;
+                case 'side':
+                    document.getElementById('cameraX').value = 2.5;
+                    document.getElementById('cameraY').value = 0;
+                    document.getElementById('cameraZ').value = 0;
+                    break;
+            }
+        }
+
+        function updatePlot() {
+            try {
+                currentData = extractData();
+                clearStatus();
+                
+                const plotType = document.querySelector('input[name="plotType"]:checked').value;
+                
+                if (plotType === 'surface') {
+                    createSurfacePlot(currentData);
+                } else {
+                    createContourPlot(currentData);
+                }
+                
+                showStatus(`Plot updated successfully! Using ${currentData.rows} rows × ${currentData.cols} columns of data.`, 'success');
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        }
+
+        function createSurfacePlot(data) {
+            const trace = {
+                type: 'surface',
+                x: data.x,
+                y: data.y,
+                z: data.z,
+                colorscale: document.getElementById('colorScale').value,
+                showscale: true
+            };
+            
+            // Apply color range if not auto
+            if (!document.getElementById('autoColor').checked) {
+                const colorMin = parseFloat(document.getElementById('colorMin').value);
+                const colorMax = parseFloat(document.getElementById('colorMax').value);
+                if (!isNaN(colorMin) && !isNaN(colorMax)) {
+                    trace.cmin = colorMin;
+                    trace.cmax = colorMax;
+                }
+            }
+            
+            const layout = {
+                title: '3D Surface Plot',
+                scene: {
+                    xaxis: {
+                        title: document.getElementById('xLabel').value || 'X',
+                        type: document.getElementById('xLog').checked ? 'log' : 'linear'
+                    },
+                    yaxis: {
+                        title: document.getElementById('yLabel').value || 'Y',
+                        type: document.getElementById('yLog').checked ? 'log' : 'linear'
+                    },
+                    zaxis: {
+                        title: document.getElementById('zLabel').value || 'Z',
+                        type: document.getElementById('zLog').checked ? 'log' : 'linear'
+                    },
+                    camera: {
+                        eye: {
+                            x: parseFloat(document.getElementById('cameraX').value),
+                            y: parseFloat(document.getElementById('cameraY').value),
+                            z: parseFloat(document.getElementById('cameraZ').value)
+                        }
+                    }
+                },
+                margin: { t: 50, r: 0, l: 0, b: 0 }
+            };
+            
+            // Apply manual ranges if not auto
+            if (!document.getElementById('autoRanges').checked) {
+                const xMin = parseFloat(document.getElementById('xMin').value);
+                const xMax = parseFloat(document.getElementById('xMax').value);
+                const yMin = parseFloat(document.getElementById('yMin').value);
+                const yMax = parseFloat(document.getElementById('yMax').value);
+                const zMin = parseFloat(document.getElementById('zMin').value);
+                const zMax = parseFloat(document.getElementById('zMax').value);
+                
+                if (!isNaN(xMin) && !isNaN(xMax)) {
+                    layout.scene.xaxis.range = [xMin, xMax];
+                }
+                if (!isNaN(yMin) && !isNaN(yMax)) {
+                    layout.scene.yaxis.range = [yMin, yMax];
+                }
+                if (!isNaN(zMin) && !isNaN(zMax)) {
+                    layout.scene.zaxis.range = [zMin, zMax];
+                }
+            }
+            
+            Plotly.newPlot('plotDiv', [trace], layout, {responsive: true});
+        }
+
+        function createContourPlot(data) {
+            const trace = {
+                type: 'contour',
+                x: data.x,
+                y: data.y,
+                z: data.z,
+                colorscale: document.getElementById('colorScale').value,
+                contours: {
+                    showlines: true,
+                    size: null,  // Let Plotly auto-calculate
+                },
+                ncontours: parseInt(document.getElementById('numContours').value),
+                showscale: true
+            };
+            
+            // Apply color range if not auto
+            if (!document.getElementById('autoColor').checked) {
+                const colorMin = parseFloat(document.getElementById('colorMin').value);
+                const colorMax = parseFloat(document.getElementById('colorMax').value);
+                if (!isNaN(colorMin) && !isNaN(colorMax)) {
+                    trace.zauto = false;
+                    trace.zmin = colorMin;
+                    trace.zmax = colorMax;
+                }
+            }
+            
+            const layout = {
+                title: '2D Contour Plot',
+                xaxis: {
+                    title: document.getElementById('xLabel').value || 'X',
+                    type: document.getElementById('xLog').checked ? 'log' : 'linear'
+                },
+                yaxis: {
+                    title: document.getElementById('yLabel').value || 'Y',
+                    type: document.getElementById('yLog').checked ? 'log' : 'linear'
+                },
+                margin: { t: 50, r: 50, l: 50, b: 50 }
+            };
+            
+            // Apply manual ranges if not auto
+            if (!document.getElementById('autoRanges').checked) {
+                const xMin = parseFloat(document.getElementById('xMin').value);
+                const xMax = parseFloat(document.getElementById('xMax').value);
+                const yMin = parseFloat(document.getElementById('yMin').value);
+                const yMax = parseFloat(document.getElementById('yMax').value);
+                
+                if (!isNaN(xMin) && !isNaN(xMax)) {
+                    layout.xaxis.range = [xMin, xMax];
+                }
+                if (!isNaN(yMin) && !isNaN(yMax)) {
+                    layout.yaxis.range = [yMin, yMax];
+                }
+            }
+            
+            Plotly.newPlot('plotDiv', [trace], layout, {responsive: true});
+        }
+
+        function exportPlot() {
+            if (!currentData) {
+                showStatus('Please create a plot first before exporting.', 'error');
+                return;
+            }
+            
+            const filename = 'surface_plot_' + new Date().toISOString().slice(0,10) + '.png';
+            Plotly.downloadImage('plotDiv', {
+                format: 'png',
+                width: 1200,
+                height: 800,
+                filename: filename
+            }).then(function() {
+                showStatus('Plot exported as ' + filename, 'success');
+            }).catch(function() {
+                showStatus('Export failed. Please try again.', 'error');
+            });
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('dataStatus');
+            statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function clearStatus() {
+            document.getElementById('dataStatus').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
